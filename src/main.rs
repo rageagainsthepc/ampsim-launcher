@@ -5,39 +5,19 @@ use std::path::Path;
 
 use crate::launch::launch;
 use crate::link::make_link;
-use clap::{arg, App, AppSettings};
+use clap::{arg, App, AppSettings, ArgMatches};
 use path_absolutize::Absolutize;
 use stable_eyre::eyre::{bail, eyre};
 use stable_eyre::Result;
-use windows::Win32::System::Console::FreeConsole;
+use windows::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONSTOP};
 
-fn hide_console_window() {
+fn display_error_box(message: &str) {
     unsafe {
-        FreeConsole();
+        MessageBoxW(None, message, "AmpSim Launcher", MB_ICONSTOP);
     }
 }
 
-fn main() -> Result<()> {
-    stable_eyre::install()?;
-
-    let matches = App::new("ampsim_starter")
-        .about("A tool for launching programs with optimized performance")
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommand(
-            App::new("launch")
-                .about("Launch a process with high performance settings")
-                .arg(arg!(<PROGRAM> "The program to launch"))
-                .setting(AppSettings::ArgRequiredElseHelp),
-        )
-        .subcommand(
-            App::new("link")
-                .about("Creates a shortcut for a given program")
-                .arg(arg!(<TARGET> "Location of the target program"))
-                .arg(arg!(<LOCATION> "Location of the shortcut"))
-                .setting(AppSettings::ArgRequiredElseHelp),
-        )
-        .get_matches();
-
+fn run_subcommand(matches: &ArgMatches) -> Result<()> {
     match matches.subcommand() {
         Some(("launch", sub_matches)) => {
             let program = Path::new(
@@ -51,7 +31,6 @@ fn main() -> Result<()> {
                 bail!("Program must exist")
             }
 
-            hide_console_window();
             launch(&program)?;
         }
         Some(("link", sub_matches)) => {
@@ -78,4 +57,37 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn main() -> Result<()> {
+    stable_eyre::install()?;
+
+    let matches = App::new("ampsim_starter")
+        .about("A tool for launching programs with optimized performance")
+        .arg(arg!(-e --errorbox "Display error messages in a graphical message box"))
+        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .subcommand(
+            App::new("launch")
+                .about("Launch a process with high performance settings")
+                .arg(arg!(<PROGRAM> "The program to launch"))
+                .setting(AppSettings::ArgRequiredElseHelp),
+        )
+        .subcommand(
+            App::new("link")
+                .about("Creates a shortcut for a given program")
+                .arg(arg!(<TARGET> "Location of the target program"))
+                .arg(arg!(<LOCATION> "Location of the shortcut"))
+                .setting(AppSettings::ArgRequiredElseHelp),
+        )
+        .get_matches();
+
+    let result = run_subcommand(&matches);
+    if matches.is_present("errorbox") {
+        match result {
+            Ok(()) => (),
+            Err(ref e) => display_error_box(format!("{:#}", e).as_str()),
+        }
+    }
+
+    result
 }
