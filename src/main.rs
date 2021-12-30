@@ -31,7 +31,7 @@ fn run_subcommand(matches: &ArgMatches) -> Result<()> {
                 bail!("Program must exist")
             }
 
-            launch(&program)?;
+            launch(&program, matches.is_present("background"))?;
         }
         Some(("link", sub_matches)) => {
             let target = Path::new(
@@ -64,7 +64,7 @@ fn main() -> Result<()> {
 
     let matches = App::new("ampsim_starter")
         .about("A tool for launching programs with optimized performance")
-        .arg(arg!(-e --errorbox "Display error messages in a graphical message box"))
+        .arg(arg!(-b --background "Activate background mode (errors as message boxes, hidden console window)"))
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(
             App::new("launch")
@@ -82,7 +82,7 @@ fn main() -> Result<()> {
         .get_matches();
 
     let result = run_subcommand(&matches);
-    if matches.is_present("errorbox") {
+    if matches.is_present("background") {
         match result {
             Ok(()) => (),
             Err(ref e) => display_error_box(format!("{:#}", e).as_str()),
