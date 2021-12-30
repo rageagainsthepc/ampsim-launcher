@@ -1,7 +1,4 @@
-use stable_eyre::{
-    eyre::{bail, eyre},
-    Report, Result,
-};
+use stable_eyre::{eyre::eyre, Report, Result};
 use std::path::Path;
 use std::process::Command;
 use std::ptr;
@@ -61,9 +58,9 @@ fn switch_power_plan(plan_guid: &GUID) -> Result<()> {
 fn elevate_process_priority(id: u32) -> Result<()> {
     unsafe {
         let proc_handle = OpenProcess(PROCESS_SET_INFORMATION, false, id);
-        if proc_handle.is_invalid() {
-            bail!("Unable to open process")
-        }
+        proc_handle
+            .ok()
+            .map_err(|e| eyre!(e.message()).wrap_err("Unable to open process"))?;
 
         let success = SetPriorityClass(proc_handle, HIGH_PRIORITY_CLASS);
         success
@@ -100,12 +97,14 @@ fn end_background_mode() -> Result<()> {
     }
 }
 
-fn spawn_child_and_wait(cmd: &mut Command) -> Result<()> {
+fn spawn_child_and_wait(cmd: &mut Command, no_console: bool) -> Result<()> {
     let mut child = cmd
         .spawn()
         .map_err(|e| Report::from(e).wrap_err("Unable to launch target process"))?;
     // apparently, detaching from the console will prevent spawning child processes
-    hide_console_window();
+    if no_console {
+        hide_console_window();
+    }
     elevate_process_priority(child.id())?;
 
     begin_background_mode()?;
@@ -115,14 +114,14 @@ fn spawn_child_and_wait(cmd: &mut Command) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn launch(program: &Path) -> Result<()> {
+pub(crate) fn launch(program: &Path, no_console: bool) -> Result<()> {
     let active_power_plan_guid = get_active_power_plan()?;
 
     let high_perf_plan = GUID::try_from(HIGH_PERF_PLAN_GUID).unwrap();
     switch_power_plan(&high_perf_plan)?;
 
     let mut cmd = Command::new(program);
-    match spawn_child_and_wait(&mut cmd) {
+    match spawn_child_and_wait(&mut cmd, no_console) {
         Ok(()) => switch_power_plan(&active_power_plan_guid),
         Err(e) => match switch_power_plan(&active_power_plan_guid) {
             Ok(()) => Err(e),
