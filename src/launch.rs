@@ -14,7 +14,9 @@ use windows::{
             Memory::LocalFree,
             Power::{PowerGetActiveScheme, PowerSetActiveScheme},
             Threading::{
-                OpenProcess, SetPriorityClass, HIGH_PRIORITY_CLASS, PROCESS_SET_INFORMATION,
+                GetCurrentProcess, OpenProcess, SetPriorityClass, HIGH_PRIORITY_CLASS,
+                PROCESS_MODE_BACKGROUND_BEGIN, PROCESS_MODE_BACKGROUND_END,
+                PROCESS_SET_INFORMATION,
             },
         },
     },
@@ -64,9 +66,9 @@ fn elevate_process_priority(id: u32) -> Result<()> {
         }
 
         let success = SetPriorityClass(proc_handle, HIGH_PRIORITY_CLASS);
-        if !success.as_bool() {
-            bail!("Unable to set priority class");
-        }
+        success
+            .ok()
+            .map_err(|e| eyre!(e.message()).wrap_err("Unable to set priority class"))?;
 
         // no need to check the return value, there is nothing we can do anyway at this point
         CloseHandle(proc_handle);
@@ -80,6 +82,24 @@ fn hide_console_window() {
     }
 }
 
+fn begin_background_mode() -> Result<()> {
+    unsafe {
+        let success = SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_BEGIN);
+        success
+            .ok()
+            .map_err(|e| eyre!(e.message()).wrap_err("Unable to begin background mode"))
+    }
+}
+
+fn end_background_mode() -> Result<()> {
+    unsafe {
+        let success = SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_END);
+        success
+            .ok()
+            .map_err(|e| eyre!(e.message()).wrap_err("Unable to end background mode"))
+    }
+}
+
 fn spawn_child_and_wait(cmd: &mut Command) -> Result<()> {
     let mut child = cmd
         .spawn()
@@ -87,7 +107,10 @@ fn spawn_child_and_wait(cmd: &mut Command) -> Result<()> {
     // apparently, detaching from the console will prevent spawning child processes
     hide_console_window();
     elevate_process_priority(child.id())?;
+
+    begin_background_mode()?;
     let _ = child.wait();
+    end_background_mode()?;
 
     Ok(())
 }
