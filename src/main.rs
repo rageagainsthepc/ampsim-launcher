@@ -74,7 +74,7 @@ fn main() -> Result<()> {
         )
         .subcommand(
             App::new("link")
-                .about("Creates a shortcut for a given program")
+                .about("Create a shortcut for a given program")
                 .arg(arg!(<TARGET> "Location of the target program"))
                 .arg(arg!(<LOCATION> "Location of the shortcut"))
                 .setting(AppSettings::ArgRequiredElseHelp),
