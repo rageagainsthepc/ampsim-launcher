@@ -12,7 +12,7 @@ fn parent_name() -> String {
     let system =
         System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
     let parent_id = system
-        .process(std::process::id().try_into().unwrap())
+        .process((std::process::id() as usize).into())
         .unwrap()
         .parent()
         .unwrap();
