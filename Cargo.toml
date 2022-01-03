@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 stable-eyre = "0.2.2"
 mslnk = "0.1.7"
-clap = { git = "https://github.com/clap-rs/clap.git", tag = "v3.0.0-rc.9"}
+clap = "3.0.1"
 path-absolutize = "3.0.5"
 
 [dependencies.windows]
