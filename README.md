@@ -9,11 +9,29 @@ As soon as the application is closed the original power plan will be restored.
 
 ## Usage
 
-- Place the binary somewhere on your system (e.g. `C:\Program Files\AmpSimLauncher`).
-- Launch a terminal window (e.g. `powershell.exe`) and navigate to the directory where the *AmpSim Launcher* binary is stored. Alternatively, you can type `powershell` into the address bar of your explorer window which will start a `powershell` instance in the current directory.
-- Run `ampsim-launcher.exe link '<path\to\your\ampsim.exe>' '<C:\Users\YOUR USER\Desktop\Shortcut Name>'` for each individual amp emulator. This will create a shortcut which launches *AmpSim Launcher* with the correct parameters.
+This tool offers an interactive as well as a CLI mode. If you are not familiar using consoles (e.g. `powershell.exe`, `cmd.exe`)
+you might be better off using the interactive mode.
 
-You could also launch a program directly by running `ampsim-launcher.exe launch <path\to\your\ampsim.exe>`.
+### Interactive
+
+- Place the binary somewhere on your system (e.g. `C:\Program Files\AmpSimLauncher\ampsim-launcher.exe`).
+- Start the binary via double click. A console window will open in order to guide you through the process of creating a shortcut.
+The shortcut will be configured to execute *AmpSim Launcher* with the correct parameters for your specific target program.
+- Repeat the shortcut creation step for each program that should be launched via *AmpSim Launcher*.
+
+#### Tips
+
+- Dragging and dropping binaries into the console window will automatically enter their respective file path.
+- If you decide to relocate the *AmpSim Launcher* binary you will have to re-generate all shortcuts.
+
+### CLI
+
+Advanced users may also use this tool from a console window. Currently, there are two subcommands available:
+
+- `launch` for executing a target process
+- `link` for creating a shortcut
+
+You can get a more detailed description by running `ampsim-launcher.exe --help`.
 
 ## Building
 
