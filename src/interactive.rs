@@ -25,7 +25,7 @@ fn get_target_path() -> Result<PathBuf> {
                     }
                     println!("Target does not exist or is not a file.");
                 }
-                Err(e) => println!("{}", e.to_string()),
+                Err(e) => println!("{e}"),
             }
         }
         println!("Enter the path of a target executable:");
@@ -61,7 +61,7 @@ fn get_shortcut_path(target_path: &Path) -> Result<PathBuf> {
                     }
                     println!("Parent directory is not a directory.");
                 }
-                Err(e) => println!("{}", e.to_string()),
+                Err(e) => println!("{e}"),
             }
         }
         println!("Enter a valid shortcut path:");
@@ -90,7 +90,7 @@ pub(crate) fn run() -> Result<()> {
     let result = create_shortcut();
 
     if let Err(ref e) = result {
-        errorbox::show(format!("{:#}", e).as_str())
+        errorbox::show(format!("{e:#}").as_str())
     }
 
     result

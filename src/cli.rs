@@ -73,7 +73,7 @@ pub(crate) fn run() -> Result<(), stable_eyre::Report> {
     if matches.is_present("background") {
         match result {
             Ok(()) => (),
-            Err(ref e) => errorbox::show(format!("{:#}", e).as_str()),
+            Err(ref e) => errorbox::show(format!("{e:#}").as_str()),
         }
     }
     result
