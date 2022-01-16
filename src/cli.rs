@@ -1,17 +1,16 @@
-use std::path::Path;
-
 use crate::errorbox;
 use crate::launch::launch;
 use crate::link::make_link;
+use crate::pathext::Utf8PathExt;
+use camino::Utf8Path;
 use clap::{arg, App, AppSettings, ArgMatches};
-use path_absolutize::Absolutize;
 use stable_eyre::eyre::{bail, eyre};
 use stable_eyre::Result;
 
 fn run_subcommand(matches: &ArgMatches) -> Result<()> {
     match matches.subcommand() {
         Some(("launch", sub_matches)) => {
-            let program = Path::new(
+            let program = Utf8Path::new(
                 sub_matches
                     .value_of("PROGRAM")
                     .ok_or_else(|| eyre!("PRORGAM is required"))?,
@@ -25,13 +24,13 @@ fn run_subcommand(matches: &ArgMatches) -> Result<()> {
             launch(&program, matches.is_present("background"))?;
         }
         Some(("link", sub_matches)) => {
-            let target = Path::new(
+            let target = Utf8Path::new(
                 sub_matches
                     .value_of("TARGET")
                     .ok_or_else(|| eyre!("TARGET is required"))?,
             )
             .absolutize()?;
-            let location = Path::new(
+            let location = Utf8Path::new(
                 sub_matches
                     .value_of("LOCATION")
                     .ok_or_else(|| eyre!("LOCATION is required"))?,

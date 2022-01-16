@@ -1,14 +1,11 @@
-use std::{
-    env, io,
-    path::{Path, PathBuf},
-};
+use std::{env, io};
 
-use path_absolutize::Absolutize;
+use camino::{Utf8Path, Utf8PathBuf};
 use stable_eyre::Result;
 
-use crate::{errorbox, link::make_link, pathext::PathExt};
+use crate::{errorbox, link::make_link, pathext::Utf8PathExt};
 
-fn get_target_path() -> Result<PathBuf> {
+fn get_target_path() -> Result<Utf8PathBuf> {
     let target_path = loop {
         let mut input_buffer = String::new();
         std::io::stdin().read_line(&mut input_buffer)?;
@@ -18,10 +15,10 @@ fn get_target_path() -> Result<PathBuf> {
         if line.is_empty() {
             println!("Input required. Enter the path of a target executable:");
         } else {
-            match Path::new(line).is_file_ext() {
+            match Utf8Path::new(line).is_file_ext() {
                 Ok(is_file) => {
                     if is_file {
-                        break PathBuf::from(line);
+                        break Utf8PathBuf::from(line);
                     }
                     println!("Target does not exist or is not a file.");
                 }
@@ -33,16 +30,17 @@ fn get_target_path() -> Result<PathBuf> {
     Ok(target_path)
 }
 
-fn get_shortcut_path(target_path: &Path) -> Result<PathBuf> {
-    let default_shortcut_path = Path::new(&env::var("USERPROFILE")?).join("Desktop").join(
-        Path::new(target_path)
-            .with_extension("lnk")
-            .file_name()
-            .unwrap(),
-    );
+fn get_shortcut_path(target_path: &Utf8Path) -> Result<Utf8PathBuf> {
+    let default_shortcut_path = Utf8Path::new(&env::var("USERPROFILE")?)
+        .join("Desktop")
+        .join(
+            Utf8Path::new(target_path)
+                .with_extension("lnk")
+                .file_name()
+                .unwrap(),
+        );
     println!(
-        "Enter the path where the shortcut will be created (default: {}):",
-        default_shortcut_path.to_string_lossy()
+        "Enter the path where the shortcut will be created (default: {default_shortcut_path}):"
     );
 
     let shortcut_path = loop {
@@ -53,11 +51,11 @@ fn get_shortcut_path(target_path: &Path) -> Result<PathBuf> {
 
         if line.is_empty() {
             break None;
-        } else if let Some(p) = Path::new(line).absolutize()?.parent() {
+        } else if let Some(p) = Utf8Path::new(line).absolutize()?.parent() {
             match p.is_dir_ext() {
                 Ok(is_dir) => {
                     if is_dir {
-                        break Some(PathBuf::from(line));
+                        break Some(Utf8PathBuf::from(line));
                     }
                     println!("Parent directory is not a directory.");
                 }
