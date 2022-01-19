@@ -10,6 +10,12 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
+      - name: Install latest stable toolchain with clippy and rustfmt
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy, rustfmt
       - uses: actions/checkout@v1
       - name: Annotate commit with clippy warnings
         uses: actions-rs/clippy-check@v1
