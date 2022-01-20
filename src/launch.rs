@@ -1,5 +1,5 @@
+use camino::Utf8Path;
 use stable_eyre::{eyre::eyre, Report, Result};
-use std::path::Path;
 use std::process::Command;
 use std::ptr;
 use windows::{
@@ -114,7 +114,7 @@ fn spawn_child_and_wait(cmd: &mut Command, no_console: bool) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn launch(program: &Path, no_console: bool) -> Result<()> {
+pub(crate) fn launch(program: &Utf8Path, no_console: bool) -> Result<()> {
     let active_power_plan_guid = get_active_power_plan()?;
 
     let high_perf_plan = GUID::try_from(HIGH_PERF_PLAN_GUID).unwrap();

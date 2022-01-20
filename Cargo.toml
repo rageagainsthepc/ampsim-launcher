@@ -12,6 +12,7 @@ sysinfo = "0.22.4"
 lazy_static = "1.4.0"
 Inflector = "0.11.4"
 quoted-string = "0.6.1"
+camino = "1.0.5"
 
 [dependencies.windows]
 version = "0.29.0"
