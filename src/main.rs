@@ -1,10 +1,18 @@
 mod cli;
 mod errorbox;
 mod interactive;
-mod launch;
-mod link;
+cfg_if! {
+    if #[cfg(feature = "realtime")] {
+        mod launch_realtime;
+        mod link_realtime;
+    } else {
+        mod launch;
+        mod link;
+    }
+}
 mod pathext;
 
+use cfg_if::cfg_if;
 use stable_eyre::Result;
 use sysinfo::{ProcessExt, ProcessRefreshKind, RefreshKind, System, SystemExt};
 

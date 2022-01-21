@@ -3,12 +3,20 @@ use std::{env, io};
 use camino::{Utf8Path, Utf8PathBuf};
 use stable_eyre::Result;
 
-use crate::{errorbox, link::make_link, pathext::Utf8PathExt};
+use crate::{errorbox, pathext::Utf8PathExt};
+cfg_if! {
+    if #[cfg(feature = "realtime")] {
+        use crate::link_realtime::make_link;
+    } else {
+        use crate::link::make_link;
+    }
+}
+use cfg_if::cfg_if;
 
 fn get_target_path() -> Result<Utf8PathBuf> {
     let target_path = loop {
         let mut input_buffer = String::new();
-        std::io::stdin().read_line(&mut input_buffer)?;
+        io::stdin().read_line(&mut input_buffer)?;
         let mut line = input_buffer.lines().next().unwrap();
         line = quoted_string::strip_dquotes(line).unwrap_or(line);
 
@@ -45,7 +53,7 @@ fn get_shortcut_path(target_path: &Utf8Path) -> Result<Utf8PathBuf> {
 
     let shortcut_path = loop {
         let mut input_buffer = String::new();
-        std::io::stdin().read_line(&mut input_buffer)?;
+        io::stdin().read_line(&mut input_buffer)?;
         let mut line = input_buffer.lines().next().unwrap();
         line = quoted_string::strip_dquotes(line).unwrap_or(line);
 

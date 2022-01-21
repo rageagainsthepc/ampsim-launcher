@@ -1,8 +1,16 @@
 use crate::errorbox;
-use crate::launch::launch;
-use crate::link::make_link;
+cfg_if! {
+    if #[cfg(feature = "realtime")] {
+        use crate::launch_realtime::launch;
+        use crate::link_realtime::make_link;
+    } else {
+        use crate::launch::launch;
+        use crate::link::make_link;
+    }
+}
 use crate::pathext::Utf8PathExt;
 use camino::Utf8Path;
+use cfg_if::cfg_if;
 use clap::{arg, App, AppSettings, ArgMatches};
 use stable_eyre::eyre::{bail, eyre};
 use stable_eyre::Result;
