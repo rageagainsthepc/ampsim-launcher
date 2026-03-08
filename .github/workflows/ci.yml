@@ -11,12 +11,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Install latest stable toolchain with clippy and rustfmt
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
           components: clippy, rustfmt
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v6
       - name: Annotate commit with clippy warnings
         uses: actions-rs/clippy-check@v1
         with:
@@ -24,7 +22,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: -- -D warnings
       - name: Rustfmt check
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: -- --check
+        run: cargo fmt -- --check
