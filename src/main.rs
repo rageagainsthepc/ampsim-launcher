@@ -6,18 +6,19 @@ mod link;
 mod pathext;
 
 use stable_eyre::Result;
-use sysinfo::{ProcessExt, ProcessRefreshKind, RefreshKind, System, SystemExt};
+use sysinfo::{ProcessRefreshKind, RefreshKind, System};
 
 fn parent_name() -> String {
-    let system =
-        System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+    let system = System::new_with_specifics(
+        RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
+    );
     let parent_id = system
-        .process(std::process::id().try_into().unwrap())
+        .process((std::process::id() as usize).into())
         .unwrap()
         .parent()
         .unwrap();
     let parent_name = system.process(parent_id).unwrap().name();
-    parent_name.to_owned()
+    parent_name.to_string_lossy().to_string()
 }
 
 fn main() -> Result<()> {
