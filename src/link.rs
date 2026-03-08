@@ -1,6 +1,6 @@
 use camino::Utf8Path;
 use mslnk::{ShellLink, ShowCommand};
-use stable_eyre::{eyre::bail, Result};
+use stable_eyre::{Result, eyre::bail};
 
 pub(crate) fn make_link(target: &Utf8Path, location: &Utf8Path) -> Result<()> {
     let mut link = ShellLink::new(std::env::current_exe()?)?;

@@ -1,22 +1,20 @@
 use camino::Utf8Path;
-use stable_eyre::{eyre::eyre, Report, Result};
-use std::process::Command;
+use stable_eyre::{Report, Result, eyre::eyre};
 use std::ptr;
+use std::{ffi::c_void, process::Command};
 use windows::{
-    core::GUID,
     Win32::{
-        Foundation::CloseHandle,
+        Foundation::{CloseHandle, HLOCAL, LocalFree},
         System::{
             Console::FreeConsole,
-            Memory::LocalFree,
             Power::{PowerGetActiveScheme, PowerSetActiveScheme},
             Threading::{
-                GetCurrentProcess, OpenProcess, SetPriorityClass, HIGH_PRIORITY_CLASS,
-                PROCESS_MODE_BACKGROUND_BEGIN, PROCESS_MODE_BACKGROUND_END,
-                PROCESS_SET_INFORMATION,
+                GetCurrentProcess, HIGH_PRIORITY_CLASS, OpenProcess, PROCESS_MODE_BACKGROUND_BEGIN,
+                PROCESS_MODE_BACKGROUND_END, PROCESS_SET_INFORMATION, SetPriorityClass,
             },
         },
     },
+    core::GUID,
 };
 
 static HIGH_PERF_PLAN_GUID: &str = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c";
@@ -25,17 +23,17 @@ fn get_active_power_plan() -> Result<GUID> {
     let mut guid_result: *mut GUID = ptr::null_mut();
     unsafe {
         let success = PowerGetActiveScheme(None, &mut guid_result);
-        if success == 0 {
+        if success.is_ok() {
             let active_power_plan_guid = guid_result.read();
-            let free_handle = LocalFree(guid_result as _);
-            if free_handle != 0 {
+            let free_handle = LocalFree(Some(HLOCAL(guid_result as *mut c_void)));
+            if !free_handle.is_invalid() {
                 println!("Unable to free guid")
             }
             Ok(active_power_plan_guid)
         } else {
             Err(eyre!(
                 "Unable to get active power plan. Error code: {}",
-                success
+                success.0
             ))
         }
     }
@@ -43,11 +41,11 @@ fn get_active_power_plan() -> Result<GUID> {
 
 fn switch_power_plan(plan_guid: &GUID) -> Result<()> {
     unsafe {
-        let success = PowerSetActiveScheme(None, plan_guid);
-        if success != 0 {
+        let success = PowerSetActiveScheme(None, Some(plan_guid));
+        if success.is_err() {
             Err(eyre!(
                 "Unable to switch to high performance plan. Error code: {}",
-                success
+                success.0
             ))
         } else {
             Ok(())
@@ -57,43 +55,37 @@ fn switch_power_plan(plan_guid: &GUID) -> Result<()> {
 
 fn elevate_process_priority(id: u32) -> Result<()> {
     unsafe {
-        let proc_handle = OpenProcess(PROCESS_SET_INFORMATION, false, id);
-        proc_handle
-            .ok()
-            .map_err(|e| eyre!(e.message()).wrap_err("Unable to open process"))?;
+        match OpenProcess(PROCESS_SET_INFORMATION, false, id) {
+            Ok(proc_handle) => {
+                let success = SetPriorityClass(proc_handle, HIGH_PRIORITY_CLASS);
+                success.map_err(|e| eyre!(e.message()).wrap_err("Unable to set priority class"))?;
 
-        let success = SetPriorityClass(proc_handle, HIGH_PRIORITY_CLASS);
-        success
-            .ok()
-            .map_err(|e| eyre!(e.message()).wrap_err("Unable to set priority class"))?;
-
-        // no need to check the return value, there is nothing we can do anyway at this point
-        CloseHandle(proc_handle);
+                // no need to check the return value, there is nothing we can do anyway at this point
+                CloseHandle(proc_handle)?;
+                Ok(())
+            }
+            Err(e) => Err(eyre!(e.message()).wrap_err("Unable to open process")),
+        }
     }
-    Ok(())
 }
 
 fn hide_console_window() {
     unsafe {
-        FreeConsole();
+        let _ = FreeConsole();
     }
 }
 
 fn begin_background_mode() -> Result<()> {
     unsafe {
         let success = SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_BEGIN);
-        success
-            .ok()
-            .map_err(|e| eyre!(e.message()).wrap_err("Unable to begin background mode"))
+        success.map_err(|e| eyre!(e.message()).wrap_err("Unable to begin background mode"))
     }
 }
 
 fn end_background_mode() -> Result<()> {
     unsafe {
         let success = SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_END);
-        success
-            .ok()
-            .map_err(|e| eyre!(e.message()).wrap_err("Unable to end background mode"))
+        success.map_err(|e| eyre!(e.message()).wrap_err("Unable to end background mode"))
     }
 }
 
